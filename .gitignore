@@ -1,0 +1,11 @@
+.DS_Store
+*.class*
+*.log
+bin/
+
+dist/*
+target/
+
+.settings
+.vscode
+.project
