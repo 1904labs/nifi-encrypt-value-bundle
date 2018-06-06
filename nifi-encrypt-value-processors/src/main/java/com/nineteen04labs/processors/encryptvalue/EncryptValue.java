@@ -40,24 +40,48 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Tags({"example"})
-@CapabilityDescription("Provide a description")
-@SeeAlso({})
-@ReadsAttributes({@ReadsAttribute(attribute="", description="")})
-@WritesAttributes({@WritesAttribute(attribute="", description="")})
+@Tags({"encrypt", "hash", "SHA-256", "json"})
+@CapabilityDescription("NiFi processor to encrypt JSON values")
 public class EncryptValue extends AbstractProcessor {
 
-    public static final PropertyDescriptor MY_PROPERTY = new PropertyDescriptor
-            .Builder().name("MY_PROPERTY")
-            .displayName("My property")
-            .description("Example Property")
+    public static final PropertyDescriptor FLOW_FORMAT = new PropertyDescriptor
+            .Builder().name("FLOW_FORMAT")
+            .displayName("FlowFile Format")
+            .description("Specify the format of the incoming FlowFile")
             .required(true)
-            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+            // TODO: Use a Set with at least JSON and AVRO as allowable values
+            .allowableValues("JSON")
+            .defaultValue("JSON")
             .build();
 
-    public static final Relationship MY_RELATIONSHIP = new Relationship.Builder()
-            .name("MY_RELATIONSHIP")
-            .description("Example relationship")
+    public static final PropertyDescriptor FIELD_NAMES = new PropertyDescriptor
+            .Builder().name("FIELD_NAMES")
+            .displayName("Field Names")
+            .description("String array of fields whose values to encrypt. Use the default to ignore encryption entirely")
+            .required(true)
+            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+            // TODO: Figure out a better way to bypass encryption. Using string value "none" is not ideal.
+            .defaultValue("[\"none\"]")
+            .build();
+    
+    public static final PropertyDescriptor HASH_ALG = new PropertyDescriptor
+            .Builder().name("HASH_ALG")
+            .displayName("Hash Algorithm")
+            .description("Determines what hashing algorithm should be used to perform the encryption")
+            .required(true)
+            // TODO: Use java.security.Security with MessageDigest algorithms
+            .allowableValues("SHA-256")
+            .defaultValue("SHA-256")
+            .build();
+
+    public static final Relationship REL_SUCCESS = new Relationship.Builder()
+            .name("success")
+            .description("FlowFiles that are processed successfully will be sent to this relationship")
+            .build();
+
+    public static final Relationship REL_FAILURE = new Relationship.Builder()
+            .name("failure")
+            .description("FlowFiles that cannot be processed successfully will be sent to this relationship")
             .build();
 
     private List<PropertyDescriptor> descriptors;
@@ -67,11 +91,14 @@ public class EncryptValue extends AbstractProcessor {
     @Override
     protected void init(final ProcessorInitializationContext context) {
         final List<PropertyDescriptor> descriptors = new ArrayList<PropertyDescriptor>();
-        descriptors.add(MY_PROPERTY);
+        descriptors.add(FLOW_FORMAT);
+        descriptors.add(FIELD_NAMES);
+        descriptors.add(HASH_ALG);
         this.descriptors = Collections.unmodifiableList(descriptors);
 
         final Set<Relationship> relationships = new HashSet<Relationship>();
-        relationships.add(MY_RELATIONSHIP);
+        relationships.add(REL_SUCCESS);
+        relationships.add(REL_FAILURE);
         this.relationships = Collections.unmodifiableSet(relationships);
     }
 
@@ -96,6 +123,12 @@ public class EncryptValue extends AbstractProcessor {
         if ( flowFile == null ) {
             return;
         }
-        // TODO implement
+        try {
+            // TODO implement
+
+        } catch (Exception e) {
+            getLogger().error("Something went wrong", e);
+            session.transfer(flowFile, REL_FAILURE);
+        }
     }
 }
