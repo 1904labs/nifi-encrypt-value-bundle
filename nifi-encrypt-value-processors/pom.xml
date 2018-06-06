@@ -18,11 +18,11 @@
 
     <parent>
         <groupId>com.nineteen04labs</groupId>
-        <artifactId>nifi-pii-encrypter-bundle</artifactId>
+        <artifactId>nifi-encrypt-value-bundle</artifactId>
         <version>18.06.1</version>
     </parent>
 
-    <artifactId>nifi-pii-encrypter-processors</artifactId>
+    <artifactId>nifi-encrypt-value-processors</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>

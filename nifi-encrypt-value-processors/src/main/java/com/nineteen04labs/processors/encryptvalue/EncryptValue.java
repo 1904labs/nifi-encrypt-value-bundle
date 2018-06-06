@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.nineteen04labs.processors.piiencrypter;
+package com.nineteen04labs.processors.encryptvalue;
 
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.flowfile.FlowFile;
@@ -45,7 +45,7 @@ import java.util.Set;
 @SeeAlso({})
 @ReadsAttributes({@ReadsAttribute(attribute="", description="")})
 @WritesAttributes({@WritesAttribute(attribute="", description="")})
-public class PiiEncrypter extends AbstractProcessor {
+public class EncryptValue extends AbstractProcessor {
 
     public static final PropertyDescriptor MY_PROPERTY = new PropertyDescriptor
             .Builder().name("MY_PROPERTY")

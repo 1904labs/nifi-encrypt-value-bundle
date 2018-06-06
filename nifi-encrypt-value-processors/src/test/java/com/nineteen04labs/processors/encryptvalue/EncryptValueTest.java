@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.nineteen04labs.processors.piiencrypter;
+package com.nineteen04labs.processors.encryptvalue;
 
 import org.apache.nifi.util.TestRunner;
 import org.apache.nifi.util.TestRunners;
@@ -22,13 +22,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 
-public class PiiEncrypterTest {
+public class EncryptValueTest {
 
     private TestRunner testRunner;
 
     @Before
     public void init() {
-        testRunner = TestRunners.newTestRunner(PiiEncrypter.class);
+        testRunner = TestRunners.newTestRunner(EncryptValue.class);
     }
 
     @Test
