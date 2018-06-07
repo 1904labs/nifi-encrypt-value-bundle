@@ -16,24 +16,61 @@
  */
 package com.nineteen04labs.processors.encryptvalue;
 
+import java.util.logging.Logger;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.nio.file.Path;
+
+import org.apache.nifi.util.MockFlowFile;
 import org.apache.nifi.util.TestRunner;
 import org.apache.nifi.util.TestRunners;
-import org.junit.Before;
 import org.junit.Test;
 
 
 public class EncryptValueTest {
 
-    private TestRunner testRunner;
+    private static final Logger LOGGER = Logger.getLogger( EncryptValueTest.class.getName() );
 
-    @Before
-    public void init() {
-        testRunner = TestRunners.newTestRunner(EncryptValue.class);
+    private final Path unencryptedFile = Paths.get("src/test/resources/unencrypted.json");
+    private final TestRunner runner = TestRunners.newTestRunner(new EncryptValue());
+
+    @Test
+    public void testSHA512() throws IOException {
+        Path sha512File = Paths.get("src/test/resources/sha512.json");
+        testEncryption("SHA-512", sha512File);
     }
 
     @Test
-    public void testProcessor() {
+    public void testNoEncryption() throws IOException {
+        runner.setProperty(EncryptValue.FIELD_NAMES, "[\"none\"]");
+        runner.setProperty(EncryptValue.FLOW_FORMAT, "JSON");
+        runner.setProperty(EncryptValue.HASH_ALG, "SHA-512");
 
+        runner.enqueue(unencryptedFile);
+
+        runner.run();
+        runner.assertQueueEmpty();
+        runner.assertAllFlowFilesTransferred(EncryptValue.REL_SUCCESS, 1);
+
+        final MockFlowFile outFile = runner.getFlowFilesForRelationship(EncryptValue.REL_SUCCESS).get(0);
+
+        outFile.assertContentEquals(unencryptedFile);
+    }
+
+    private void testEncryption(final String hashAlgorithm, final Path encryptedFile) throws IOException {
+        runner.setProperty(EncryptValue.FIELD_NAMES, "[\"card_number\", \"last_name\"]");
+        runner.setProperty(EncryptValue.FLOW_FORMAT, "JSON");
+        runner.setProperty(EncryptValue.HASH_ALG, hashAlgorithm);
+
+        runner.enqueue(unencryptedFile);
+
+        runner.run();
+        runner.assertQueueEmpty();
+        runner.assertAllFlowFilesTransferred(EncryptValue.REL_SUCCESS, 1);
+
+        final MockFlowFile outFile = runner.getFlowFilesForRelationship(EncryptValue.REL_SUCCESS).get(0);
+
+        outFile.assertContentEquals(encryptedFile);
     }
 
 }
