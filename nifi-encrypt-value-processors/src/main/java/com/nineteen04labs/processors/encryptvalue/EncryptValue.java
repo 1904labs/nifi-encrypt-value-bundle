@@ -58,11 +58,8 @@ public class EncryptValue extends AbstractProcessor {
     public static final PropertyDescriptor FIELD_NAMES = new PropertyDescriptor
             .Builder().name("FIELD_NAMES")
             .displayName("Field Names")
-            .description("String array of fields whose values to encrypt. Use the default to ignore encryption entirely")
-            .required(true)
-            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
-            // TODO: Figure out a better way to bypass encryption. Using string value "none" is not ideal.
-            .defaultValue("[\"none\"]")
+            .description("Comma separated list of fields whose values to encrypt.")
+            .addValidator(StandardValidators.NON_EMPTY_EL_VALIDATOR)
             .build();
     
     public static final PropertyDescriptor HASH_ALG = new PropertyDescriptor
@@ -126,15 +123,15 @@ public class EncryptValue extends AbstractProcessor {
             return;
         }
         try {
-            final AtomicReference<String> ref = new AtomicReference<>();
+            final AtomicReference<String> contentRef = new AtomicReference<>();
 
             session.read(flowFile, new InputStreamCallback(){
                 @Override
                 public void process(InputStream in) throws IOException {
-                    ref.set(IOUtils.toString(in, "UTF-8"));
+                    contentRef.set(IOUtils.toString(in, "UTF-8"));
                 }
             });
-            final String content = ref.get();
+            String content = contentRef.get();
 
             flowFile = session.write(flowFile, outputStream -> outputStream.write(content.getBytes()));
 
