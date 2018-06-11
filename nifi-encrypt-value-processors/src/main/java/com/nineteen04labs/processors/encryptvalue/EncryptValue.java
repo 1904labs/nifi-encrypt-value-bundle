@@ -16,17 +16,26 @@
  */
 package com.nineteen04labs.processors.encryptvalue;
 
-import org.apache.commons.io.IOUtils;
-import java.util.concurrent.atomic.AtomicReference;
-
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.annotation.lifecycle.OnScheduled;
@@ -128,12 +137,51 @@ public class EncryptValue extends AbstractProcessor {
             session.read(flowFile, new InputStreamCallback(){
                 @Override
                 public void process(InputStream in) throws IOException {
-                    contentRef.set(IOUtils.toString(in, "UTF-8"));
+                    contentRef.set(IOUtils.toString(in, StandardCharsets.UTF_8));
                 }
             });
             String content = contentRef.get();
+            
+            List<String> fieldNames = new ArrayList<String>();
+            String rawFieldNames = context.getProperty(FIELD_NAMES).getValue();
+            if (rawFieldNames.isEmpty() || null == rawFieldNames) {
+                session.transfer(flowFile, REL_SUCCESS);
+                return;
+            } else {
+                fieldNames = Arrays.asList(rawFieldNames.split(","));
+            }
 
-            flowFile = session.write(flowFile, outputStream -> outputStream.write(content.getBytes()));
+            String algorithm = context.getProperty(HASH_ALG).getValue();
+            MessageDigest digest = MessageDigest.getInstance(algorithm);
+            
+            Map<String,Object> contentMap = new ObjectMapper()
+                .readValue(content, LinkedHashMap.class);
+
+            for(String fieldName : fieldNames) {
+                if (contentMap.containsKey(fieldName)) {
+                    String valueToHash = contentMap.get(fieldName).toString();
+                    byte[] hash = digest.digest(valueToHash.getBytes(StandardCharsets.UTF_8));
+
+                    StringBuffer buffer = new StringBuffer();
+                    for (byte b : hash) {
+                        buffer.append(Integer.toString((b & 0xff) + 0x100, 16).substring(1));
+                    }
+
+                    String hashedValue = buffer.toString();
+                    contentMap.replace(fieldName, valueToHash, hashedValue);
+                }
+            }
+
+            String newContent = new ObjectMapper()
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .writeValueAsString(contentMap);
+
+            //Delete
+            BufferedWriter writer = new BufferedWriter(new FileWriter("src/test/resources/nifi.json"));
+            writer.write(newContent);
+            writer.close();
+
+            flowFile = session.write(flowFile, outputStream -> outputStream.write(newContent.getBytes()));
 
             session.transfer(flowFile, REL_SUCCESS);
 

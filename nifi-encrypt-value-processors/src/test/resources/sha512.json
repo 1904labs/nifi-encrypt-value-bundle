@@ -1,12 +1,12 @@
 {
-    "status": "active",
-    "first_name": "Catherine ",
-    "last_name": "20ff29ae253bf483fb5f3d95e3aaea1cb4d62c95972827838a1b4debfd05470c138e8e9b1b1eca74eb46da6f4d578279a88b452bb2f6b2e8ae2e473e37a054e1",
-    "title": "Ms",
-    "created_at": "2015-09-03T01:23:20.605354",
-    "updated_at": "2016-09-18T20:05:20.747376",
-    "entity": "bed56c6310c6497b8c456b9244c2a427",
-    "position": "Chair, BILETA ",
-    "id": "ffabd37094c24626a6901a03799c35d2",
-    "card_number": "4572b7b391c982302250b0c9312bcd4304d42d4214a968a749666f28b9db16abb9536a89470a2f4399d31c17d9ed6237c59a3cb9503883e95cb15d35b53c4919"
+  "status" : "active",
+  "first_name" : "Catherine ",
+  "last_name" : "20ff29ae253bf483fb5f3d95e3aaea1cb4d62c95972827838a1b4debfd05470c138e8e9b1b1eca74eb46da6f4d578279a88b452bb2f6b2e8ae2e473e37a054e1",
+  "title" : "Ms",
+  "created_at" : "2015-09-03T01:23:20.605354",
+  "updated_at" : "2016-09-18T20:05:20.747376",
+  "entity" : "bed56c6310c6497b8c456b9244c2a427",
+  "position" : "Chair, BILETA ",
+  "id" : "ffabd37094c24626a6901a03799c35d2",
+  "card_number" : "4572b7b391c982302250b0c9312bcd4304d42d4214a968a749666f28b9db16abb9536a89470a2f4399d31c17d9ed6237c59a3cb9503883e95cb15d35b53c4919"
 }
