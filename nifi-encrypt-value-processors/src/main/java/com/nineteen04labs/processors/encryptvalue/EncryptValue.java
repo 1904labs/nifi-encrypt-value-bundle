@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.security.Provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -91,22 +92,17 @@ public class EncryptValue extends AbstractProcessor {
             .description("FlowFiles that cannot be processed successfully will be sent to this relationship")
             .build();
 
-    private static TreeSet<String> getAvailableAlgorithms() {
+    public static Set<String> getAvailableAlgorithms() {
         final String digestClassName = MessageDigest.class.getSimpleName();
-    
-        return new TreeSet<String>(Arrays.stream(Security.getProviders())
-            .flatMap(prov -> {
-                final Set<String> algorithms = new HashSet<>(0);
-            
-                prov.getServices().stream()
-                    .filter(s -> digestClassName.equalsIgnoreCase(s.getType()))
-                    .map(Service::getAlgorithm)
-                    .collect(Collectors.toCollection(() -> algorithms));
-            
-                return algorithms.stream();
-            })
-            .sorted(String::compareTo)
-            .collect(Collectors.toSet()));
+        final Set<String> algorithms = new TreeSet<>();
+        
+        for (Provider prov : Security.getProviders()) {
+            prov.getServices().stream()
+                .filter(s -> digestClassName.equalsIgnoreCase(s.getType()))
+                .map(Service::getAlgorithm)
+                .collect(Collectors.toCollection(() -> algorithms));
+        }
+        return algorithms;
     }
 
     private List<PropertyDescriptor> descriptors;
