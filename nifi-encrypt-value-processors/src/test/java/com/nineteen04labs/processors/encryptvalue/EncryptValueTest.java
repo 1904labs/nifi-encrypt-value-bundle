@@ -39,7 +39,6 @@ public class EncryptValueTest {
 
     @Test
     public void testNoEncryption() throws IOException {
-        runner.setProperty(EncryptValue.FIELD_NAMES, "");
         runner.setProperty(EncryptValue.FLOW_FORMAT, "JSON");
         runner.setProperty(EncryptValue.HASH_ALG, "SHA-512");
 

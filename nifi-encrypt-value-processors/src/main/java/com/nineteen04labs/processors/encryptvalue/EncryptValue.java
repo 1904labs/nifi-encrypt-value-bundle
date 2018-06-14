@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.Provider.Service;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,7 +32,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -38,7 +42,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.io.IOUtils;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
-import org.apache.nifi.annotation.lifecycle.OnScheduled;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.flowfile.FlowFile;
 import org.apache.nifi.processor.AbstractProcessor;
@@ -50,7 +53,7 @@ import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.io.InputStreamCallback;
 import org.apache.nifi.processor.util.StandardValidators;
 
-@Tags({"encrypt", "hash", "SHA-512", "json"})
+@Tags({"encrypt", "hash", "json"})
 @CapabilityDescription("NiFi processor to encrypt JSON values")
 public class EncryptValue extends AbstractProcessor {
 
@@ -77,8 +80,7 @@ public class EncryptValue extends AbstractProcessor {
             .displayName("Hash Algorithm")
             .description("Determines what hashing algorithm should be used to perform the encryption")
             .required(true)
-            // TODO: Use java.security.Security with MessageDigest algorithms
-            .allowableValues("SHA-512")
+            .allowableValues(getAvailableAlgorithms())
             .defaultValue("SHA-512")
             .build();
 
@@ -91,6 +93,24 @@ public class EncryptValue extends AbstractProcessor {
             .name("failure")
             .description("FlowFiles that cannot be processed successfully will be sent to this relationship")
             .build();
+
+    private static TreeSet<String> getAvailableAlgorithms() {
+        final String digestClassName = MessageDigest.class.getSimpleName();
+    
+        return new TreeSet<String>(Arrays.stream(Security.getProviders())
+            .flatMap(prov -> {
+                final Set<String> algorithms = new HashSet<>(0);
+            
+                prov.getServices().stream()
+                    .filter(s -> digestClassName.equalsIgnoreCase(s.getType()))
+                    .map(Service::getAlgorithm)
+                    .collect(Collectors.toCollection(() -> algorithms));
+            
+                return algorithms.stream();
+            })
+            .sorted(String::compareTo)
+            .collect(Collectors.toSet()));
+    }
 
     private List<PropertyDescriptor> descriptors;
 
@@ -118,12 +138,6 @@ public class EncryptValue extends AbstractProcessor {
     @Override
     public final List<PropertyDescriptor> getSupportedPropertyDescriptors() {
         return descriptors;
-    }
-
-    // TODO: Delete?
-    @OnScheduled
-    public void onScheduled(final ProcessContext context) {
-
     }
 
     @Override
