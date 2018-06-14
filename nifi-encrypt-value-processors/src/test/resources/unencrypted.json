@@ -1,12 +1,1 @@
-{
-  "status" : "active",
-  "first_name" : "Catherine ",
-  "last_name" : "Easton",
-  "title" : "Ms",
-  "created_at" : "2015-09-03T01:23:20.605354",
-  "updated_at" : "2016-09-18T20:05:20.747376",
-  "entity" : "bed56c6310c6497b8c456b9244c2a427",
-  "position" : "Chair, BILETA ",
-  "id" : "ffabd37094c24626a6901a03799c35d2",
-  "card_number" : "1234567891011123"
-}
+{"status":"active","first_name":"Catherine ","last_name":"Easton","title":"Ms","created_at":"2015-09-03T01:23:20.605354","updated_at":"2016-09-18T20:05:20.747376","entity":"bed56c6310c6497b8c456b9244c2a427","position":"Chair, BILETA ","id":"ffabd37094c24626a6901a03799c35d2","card_number":"1234567891011123"}

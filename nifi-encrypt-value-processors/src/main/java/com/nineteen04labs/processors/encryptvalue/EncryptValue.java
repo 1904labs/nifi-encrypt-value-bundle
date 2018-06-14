@@ -16,8 +16,6 @@
  */
 package com.nineteen04labs.processors.encryptvalue;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -37,7 +35,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
@@ -53,8 +50,8 @@ import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.io.InputStreamCallback;
 import org.apache.nifi.processor.util.StandardValidators;
 
-@Tags({"encrypt", "hash", "json"})
-@CapabilityDescription("NiFi processor to encrypt JSON values")
+@Tags({"encrypt", "hash", "json", "pii"})
+@CapabilityDescription("Encrypts the values of the given fields of a FlowFile. The original value is replaced with the hashed one.")
 public class EncryptValue extends AbstractProcessor {
 
     public static final PropertyDescriptor FLOW_FORMAT = new PropertyDescriptor
@@ -170,8 +167,7 @@ public class EncryptValue extends AbstractProcessor {
             MessageDigest digest = MessageDigest.getInstance(algorithm);
             
             @SuppressWarnings("unchecked")
-            Map<String,Object> contentMap = new ObjectMapper()
-                .readValue(content, LinkedHashMap.class);
+            Map<String,Object> contentMap = new ObjectMapper().readValue(content, LinkedHashMap.class);
 
             for(String fieldName : fieldNames) {
                 if (contentMap.containsKey(fieldName)) {
@@ -188,14 +184,7 @@ public class EncryptValue extends AbstractProcessor {
                 }
             }
 
-            String newContent = new ObjectMapper()
-                .enable(SerializationFeature.INDENT_OUTPUT)
-                .writeValueAsString(contentMap);
-
-            //Delete
-            BufferedWriter writer = new BufferedWriter(new FileWriter("src/test/resources/nifi.json"));
-            writer.write(newContent);
-            writer.close();
+            String newContent = new ObjectMapper().writeValueAsString(contentMap);           
 
             flowFile = session.write(flowFile, outputStream -> outputStream.write(newContent.getBytes()));
 
