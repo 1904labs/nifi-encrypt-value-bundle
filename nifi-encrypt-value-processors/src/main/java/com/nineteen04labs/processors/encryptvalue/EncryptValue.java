@@ -68,7 +68,8 @@ public class EncryptValue extends AbstractProcessor {
             .Builder().name("FIELD_NAMES")
             .displayName("Field Names")
             .description("Comma separated list of fields whose values to encrypt.")
-            .addValidator(StandardValidators.NON_EMPTY_EL_VALIDATOR)
+            .required(false)
+            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
     
     public static final PropertyDescriptor HASH_ALG = new PropertyDescriptor
@@ -142,9 +143,9 @@ public class EncryptValue extends AbstractProcessor {
             });
             String content = contentRef.get();
             
-            List<String> fieldNames = new ArrayList<String>();
             String rawFieldNames = context.getProperty(FIELD_NAMES).getValue();
-            if (rawFieldNames.isEmpty() || null == rawFieldNames) {
+            List<String> fieldNames = new ArrayList<String>();
+            if (rawFieldNames == null) {
                 session.transfer(flowFile, REL_SUCCESS);
                 return;
             } else {
@@ -154,6 +155,7 @@ public class EncryptValue extends AbstractProcessor {
             String algorithm = context.getProperty(HASH_ALG).getValue();
             MessageDigest digest = MessageDigest.getInstance(algorithm);
             
+            @SuppressWarnings("unchecked")
             Map<String,Object> contentMap = new ObjectMapper()
                 .readValue(content, LinkedHashMap.class);
 
