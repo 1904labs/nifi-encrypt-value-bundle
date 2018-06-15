@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.Provider;
 import java.security.Provider.Service;
 import java.security.Security;
 import java.util.ArrayList;
@@ -33,7 +34,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import java.security.Provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -61,8 +61,16 @@ public class EncryptValue extends AbstractProcessor {
             .description("Specify the format of the incoming FlowFile")
             .required(true)
             // TODO: Use a Set with at least JSON and AVRO as allowable values
-            .allowableValues("JSON")
+            .allowableValues("JSON", "AVRO")
             .defaultValue("JSON")
+            .build();
+
+    public static final PropertyDescriptor AVRO_SCHEMA = new PropertyDescriptor
+            .Builder().name("AVRO_SCHEMA")
+            .displayName("Avro Schema")
+            .description("Specify the schema if the FlowFile format is Avro.")
+            .required(false)
+            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
 
     public static final PropertyDescriptor FIELD_NAMES = new PropertyDescriptor
@@ -92,10 +100,10 @@ public class EncryptValue extends AbstractProcessor {
             .description("FlowFiles that cannot be processed successfully will be sent to this relationship")
             .build();
 
-    public static Set<String> getAvailableAlgorithms() {
+    private static Set<String> getAvailableAlgorithms() {
         final String digestClassName = MessageDigest.class.getSimpleName();
         final Set<String> algorithms = new TreeSet<>();
-        
+
         for (Provider prov : Security.getProviders()) {
             prov.getServices().stream()
                 .filter(s -> digestClassName.equalsIgnoreCase(s.getType()))
@@ -113,6 +121,7 @@ public class EncryptValue extends AbstractProcessor {
     protected void init(final ProcessorInitializationContext context) {
         final List<PropertyDescriptor> descriptors = new ArrayList<PropertyDescriptor>();
         descriptors.add(FLOW_FORMAT);
+        descriptors.add(AVRO_SCHEMA);
         descriptors.add(FIELD_NAMES);
         descriptors.add(HASH_ALG);
         this.descriptors = Collections.unmodifiableList(descriptors);
@@ -140,16 +149,6 @@ public class EncryptValue extends AbstractProcessor {
             return;
         }
         try {
-            final AtomicReference<String> contentRef = new AtomicReference<>();
-
-            session.read(flowFile, new InputStreamCallback(){
-                @Override
-                public void process(InputStream in) throws IOException {
-                    contentRef.set(IOUtils.toString(in, StandardCharsets.UTF_8));
-                }
-            });
-            String content = contentRef.get();
-            
             String rawFieldNames = context.getProperty(FIELD_NAMES).getValue();
             List<String> fieldNames = new ArrayList<String>();
             if (rawFieldNames == null) {
@@ -161,6 +160,15 @@ public class EncryptValue extends AbstractProcessor {
 
             String algorithm = context.getProperty(HASH_ALG).getValue();
             MessageDigest digest = MessageDigest.getInstance(algorithm);
+
+            final AtomicReference<String> contentRef = new AtomicReference<>();
+            session.read(flowFile, new InputStreamCallback(){
+                @Override
+                public void process(InputStream in) throws IOException {
+                    contentRef.set(IOUtils.toString(in, StandardCharsets.UTF_8));
+                }
+            });
+            String content = contentRef.get();
             
             @SuppressWarnings("unchecked")
             Map<String,Object> contentMap = new ObjectMapper().readValue(content, LinkedHashMap.class);

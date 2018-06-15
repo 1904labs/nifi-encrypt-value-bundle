@@ -17,29 +17,39 @@
 package com.nineteen04labs.processors.encryptvalue;
 
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.nifi.util.MockFlowFile;
 import org.apache.nifi.util.TestRunner;
 import org.apache.nifi.util.TestRunners;
+import org.junit.Before;
 import org.junit.Test;
 
 
-public class EncryptValueTest {
+public class EncryptValueAvroTest {
 
-    private final Path unencryptedFile = Paths.get("src/test/resources/unencrypted.json");
+    private final Path unencryptedFile = Paths.get("src/test/resources/unencrypted.avro");
+    private String avroSchema = "";
     private final TestRunner runner = TestRunners.newTestRunner(new EncryptValue());
+
+    @Before
+    public void setSchema() throws IOException {
+        avroSchema = FileUtils.readFileToString(FileUtils.getFile("src/test/resources/unencrypted.avsc"), StandardCharsets.UTF_8);
+    }
 
     @Test
     public void testSHA512() throws IOException {
-        Path sha512File = Paths.get("src/test/resources/sha512.json");
+        Path sha512File = Paths.get("src/test/resources/sha512.avro");
         testEncryption("SHA-512", sha512File);
     }
 
     @Test
     public void testNoEncryption() throws IOException {
-        runner.setProperty(EncryptValue.FLOW_FORMAT, "JSON");
+        runner.setProperty(EncryptValue.FLOW_FORMAT, "AVRO");
+        runner.setProperty(EncryptValue.AVRO_SCHEMA, avroSchema);
         runner.setProperty(EncryptValue.HASH_ALG, "SHA-512");
 
         runner.enqueue(unencryptedFile);
@@ -55,7 +65,8 @@ public class EncryptValueTest {
 
     private void testEncryption(final String hashAlgorithm, final Path encryptedFile) throws IOException {
         runner.setProperty(EncryptValue.FIELD_NAMES, "card_number,last_name");
-        runner.setProperty(EncryptValue.FLOW_FORMAT, "JSON");
+        runner.setProperty(EncryptValue.FLOW_FORMAT, "AVRO");
+        runner.setProperty(EncryptValue.AVRO_SCHEMA, avroSchema);
         runner.setProperty(EncryptValue.HASH_ALG, hashAlgorithm);
 
         runner.enqueue(unencryptedFile);
