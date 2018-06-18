@@ -20,7 +20,7 @@
     <parent>
         <groupId>com.nineteen04labs</groupId>
         <artifactId>nifi-encrypt-value-bundle</artifactId>
-        <version>18.06.1-hotfix</version>
+        <version>18.06.1</version>
     </parent>
 
     <artifactId>nifi-encrypt-value-processors</artifactId>

@@ -54,7 +54,8 @@ public class EncryptValueJsonTest {
     }
 
     private void testEncryption(final String hashAlgorithm, final Path encryptedFile) throws IOException {
-        runner.setProperty(EncryptValue.FIELD_NAMES, "card_number,last_name");
+        //runner.setProperty(EncryptValue.FIELD_NAMES, "card_number,last_name");
+        runner.setProperty(EncryptValue.FIELD_NAMES, "\"[\"card_number\",\"last_name\"]\"");
         runner.setProperty(EncryptValue.FLOW_FORMAT, "JSON");
         runner.setProperty(EncryptValue.HASH_ALG, hashAlgorithm);
 

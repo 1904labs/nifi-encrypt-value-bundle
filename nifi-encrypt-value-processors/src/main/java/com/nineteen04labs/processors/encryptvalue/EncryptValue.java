@@ -155,11 +155,16 @@ public class EncryptValue extends AbstractProcessor {
                 session.transfer(flowFile, REL_SUCCESS);
                 return;
             } else {
+                rawFieldNames = rawFieldNames.replace("[", "");
+                rawFieldNames = rawFieldNames.replace("]", "");
+                rawFieldNames = rawFieldNames.replace("\"", "");
                 fieldNames = Arrays.asList(rawFieldNames.split(","));
             }
 
             String algorithm = context.getProperty(HASH_ALG).getValue();
             MessageDigest digest = MessageDigest.getInstance(algorithm);
+
+            //String avroSchema = context.getProperty(AVRO_SCHEMA).getValue();
 
             final AtomicReference<String> contentRef = new AtomicReference<>();
             session.read(flowFile, new InputStreamCallback(){
@@ -188,7 +193,7 @@ public class EncryptValue extends AbstractProcessor {
                 }
             }
 
-            String newContent = new ObjectMapper().writeValueAsString(contentMap);           
+            String newContent = new ObjectMapper().writeValueAsString(contentMap);    
 
             flowFile = session.write(flowFile, outputStream -> outputStream.write(newContent.getBytes()));
 
