@@ -1,6 +1,6 @@
 # nifi-encrypt-value-bundle
 
-NiFi processor to encrypt JSON values
+NiFi processor to encrypt JSON values. Encrypts the values of the given fields of a FlowFile. The original value is replaced with the hashed one.
 
 ## Deploy Bundle
 
@@ -32,6 +32,6 @@ $NIFI_HOME/bin/nifi.sh start
 
 ### TODO
 
-- Add support for Avro files
+- ~~Add support for Avro files~~
 - Support multi-level JSON
 - ~~Add support for more hashing algorithms~~

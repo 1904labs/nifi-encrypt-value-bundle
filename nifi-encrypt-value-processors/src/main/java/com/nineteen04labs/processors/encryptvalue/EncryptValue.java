@@ -76,7 +76,6 @@ public class EncryptValue extends AbstractProcessor {
             .displayName("FlowFile Format")
             .description("Specify the format of the incoming FlowFile")
             .required(true)
-            // TODO: Use a Set with at least JSON and AVRO as allowable values
             .allowableValues("JSON", "AVRO")
             .defaultValue("JSON")
             .build();
@@ -172,6 +171,7 @@ public class EncryptValue extends AbstractProcessor {
             for (GenericRecord datum : streamReader) {
                 writer.write(datum, encoder);
             }
+            streamReader.close();
             encoder.flush();
             output.flush();
             return new String(output.toByteArray());

@@ -20,7 +20,7 @@
     <parent>
         <groupId>com.nineteen04labs</groupId>
         <artifactId>nifi-encrypt-value-bundle</artifactId>
-        <version>18.06.1</version>
+        <version>18.06.2</version>
     </parent>
 
     <artifactId>nifi-encrypt-value-processors</artifactId>
@@ -48,11 +48,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.9.6</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-avro</artifactId>
             <version>2.9.6</version>
         </dependency>
         <dependency>
