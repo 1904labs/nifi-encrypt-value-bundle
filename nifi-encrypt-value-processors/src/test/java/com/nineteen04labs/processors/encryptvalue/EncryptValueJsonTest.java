@@ -17,14 +17,13 @@
 package com.nineteen04labs.processors.encryptvalue;
 
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.apache.nifi.util.MockFlowFile;
 import org.apache.nifi.util.TestRunner;
 import org.apache.nifi.util.TestRunners;
 import org.junit.Test;
-
 
 public class EncryptValueJsonTest {
 

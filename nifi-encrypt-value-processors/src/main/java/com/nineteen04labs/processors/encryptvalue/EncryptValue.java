@@ -16,6 +16,10 @@
  */
 package com.nineteen04labs.processors.encryptvalue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -37,6 +41,18 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.avro.Schema;
+import org.apache.avro.file.DataFileStream;
+import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericDatumWriter;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.io.Decoder;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.io.JsonEncoder;
 import org.apache.commons.io.IOUtils;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
@@ -142,8 +158,60 @@ public class EncryptValue extends AbstractProcessor {
         return descriptors;
     }
 
+    private static String avroToJsonString(InputStream input, Schema schema) throws IOException {
+        boolean pretty = false;
+        GenericDatumReader<GenericRecord> reader = null;
+        JsonEncoder encoder = null;
+        ByteArrayOutputStream output = null;
+        try {
+            reader = new GenericDatumReader<GenericRecord>();
+            DataFileStream<GenericRecord> streamReader = new DataFileStream<GenericRecord>(input, reader);
+            output = new ByteArrayOutputStream();
+            DatumWriter<GenericRecord> writer = new GenericDatumWriter<GenericRecord>(schema);
+            encoder = EncoderFactory.get().jsonEncoder(schema, output, pretty);
+            for (GenericRecord datum : streamReader) {
+                writer.write(datum, encoder);
+            }
+            encoder.flush();
+            output.flush();
+            return new String(output.toByteArray());
+        } finally {
+            try { if (output != null) output.close(); } catch (Exception e) { }
+        }
+    }
+
+    private static byte[] jsonToAvro(String json, String schemaStr) throws IOException {
+        InputStream input = null;
+        DataFileWriter<GenericRecord> writer = null;
+        ByteArrayOutputStream output = null;
+        try {
+            Schema schema = new Schema.Parser().parse(schemaStr);
+            DatumReader<GenericRecord> reader = new GenericDatumReader<GenericRecord>(schema);
+            input = new ByteArrayInputStream(json.getBytes());
+            output = new ByteArrayOutputStream();
+            DataInputStream din = new DataInputStream(input);
+            writer = new DataFileWriter<GenericRecord>(new GenericDatumWriter<GenericRecord>());
+            writer.create(schema, output);
+            Decoder decoder = DecoderFactory.get().jsonDecoder(schema, din);
+            GenericRecord datum;
+            while (true) {
+                try {
+                    datum = reader.read(null, decoder);
+                } catch (EOFException eofe) {
+                    break;
+                }
+                writer.append(datum);
+            }
+            writer.flush();
+            writer.close();
+            return output.toByteArray();
+        } finally {
+            try { input.close(); } catch (Exception e) { }
+        }
+    }
+
     @Override
-    public void onTrigger(final ProcessContext context, final ProcessSession session) throws ProcessException {        
+    public void onTrigger(final ProcessContext context, final ProcessSession session) throws ProcessException {
         FlowFile flowFile = session.get();
         if ( flowFile == null ) {
             return;
@@ -161,15 +229,23 @@ public class EncryptValue extends AbstractProcessor {
             String algorithm = context.getProperty(HASH_ALG).getValue();
             MessageDigest digest = MessageDigest.getInstance(algorithm);
 
+            String flowFormat = context.getProperty(FLOW_FORMAT).getValue();
+            String schemaString = context.getProperty(AVRO_SCHEMA).getValue();
+            
             final AtomicReference<String> contentRef = new AtomicReference<>();
             session.read(flowFile, new InputStreamCallback(){
                 @Override
                 public void process(InputStream in) throws IOException {
-                    contentRef.set(IOUtils.toString(in, StandardCharsets.UTF_8));
+                    if(flowFormat == "AVRO") {
+                        Schema avroSchema = new Schema.Parser().setValidate(true).parse(schemaString);
+                        contentRef.set(avroToJsonString(in, avroSchema));
+                    } else if (flowFormat == "JSON") {
+                        contentRef.set(IOUtils.toString(in, StandardCharsets.UTF_8));
+                    }
                 }
             });
             String content = contentRef.get();
-            
+
             @SuppressWarnings("unchecked")
             Map<String,Object> contentMap = new ObjectMapper().readValue(content, LinkedHashMap.class);
 
@@ -188,10 +264,14 @@ public class EncryptValue extends AbstractProcessor {
                 }
             }
 
-            String newContent = new ObjectMapper().writeValueAsString(contentMap);           
-
-            flowFile = session.write(flowFile, outputStream -> outputStream.write(newContent.getBytes()));
-
+            String newContentString = new ObjectMapper().writeValueAsString(contentMap);
+            if(flowFormat == "AVRO") {
+                byte[] newContent = jsonToAvro(newContentString, schemaString);
+                flowFile = session.write(flowFile, outputStream -> outputStream.write(newContent));
+            } else if (flowFormat == "JSON") {
+                flowFile = session.write(flowFile, outputStream -> outputStream.write(newContentString.getBytes()));
+            }
+            
             session.transfer(flowFile, REL_SUCCESS);
 
         } catch (Exception e) {
