@@ -22,6 +22,12 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.Provider;
@@ -39,6 +45,19 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.Base64Variant;
+import com.fasterxml.jackson.core.FormatSchema;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonStreamContext;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.ObjectCodec;
+import com.fasterxml.jackson.core.SerializableString;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.core.JsonGenerator.Feature;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.avro.Schema;
@@ -65,7 +84,13 @@ import org.apache.nifi.processor.ProcessorInitializationContext;
 import org.apache.nifi.processor.Relationship;
 import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.io.InputStreamCallback;
+import org.apache.nifi.processor.io.StreamCallback;
 import org.apache.nifi.processor.util.StandardValidators;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 
 @Tags({"encrypt", "hash", "json", "pii"})
 @CapabilityDescription("Encrypts the values of the given fields of a FlowFile. The original value is replaced with the hashed one.")
@@ -210,6 +235,21 @@ public class EncryptValue extends AbstractProcessor {
         }
     }
 
+    private String hashValue(String valueToHash, MessageDigest digest) {
+        byte[] hash = digest.digest(valueToHash.getBytes(StandardCharsets.UTF_8));
+        StringBuffer buffer = new StringBuffer();
+        for (byte b : hash) {
+            buffer.append(Integer.toString((b & 0xff) + 0x100, 16).substring(1));
+        }
+        return buffer.toString();
+    }
+
+    public static void writeMessageToFile(String message) throws IOException{
+        BufferedWriter writer = new BufferedWriter(new FileWriter("src/test/resources/debug.json"));
+        writer.write(message);
+        writer.close();
+    }
+
     @Override
     public void onTrigger(final ProcessContext context, final ProcessSession session) throws ProcessException {
         FlowFile flowFile = session.get();
@@ -218,13 +258,11 @@ public class EncryptValue extends AbstractProcessor {
         }
         try {
             String rawFieldNames = context.getProperty(FIELD_NAMES).getValue();
-            List<String> fieldNames = new ArrayList<String>();
             if (rawFieldNames == null) {
                 session.transfer(flowFile, REL_SUCCESS);
                 return;
-            } else {
-                fieldNames = Arrays.asList(rawFieldNames.split(","));
             }
+            final List<String> fieldNames = Arrays.asList(rawFieldNames.split(","));
 
             String algorithm = context.getProperty(HASH_ALG).getValue();
             MessageDigest digest = MessageDigest.getInstance(algorithm);
@@ -232,45 +270,37 @@ public class EncryptValue extends AbstractProcessor {
             String flowFormat = context.getProperty(FLOW_FORMAT).getValue();
             String schemaString = context.getProperty(AVRO_SCHEMA).getValue();
             
-            final AtomicReference<String> contentRef = new AtomicReference<>();
-            session.read(flowFile, new InputStreamCallback(){
+            session.write(flowFile, new StreamCallback(){
                 @Override
-                public void process(InputStream in) throws IOException {
-                    if(flowFormat == "AVRO") {
-                        Schema avroSchema = new Schema.Parser().setValidate(true).parse(schemaString);
-                        contentRef.set(avroToJsonString(in, avroSchema));
-                    } else if (flowFormat == "JSON") {
-                        contentRef.set(IOUtils.toString(in, StandardCharsets.UTF_8));
+                public void process(InputStream in, OutputStream out) throws IOException {
+                    JsonFactory jsonFactory = new JsonFactory().setRootValueSeparator(null);
+
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+
+                    JsonParser jsonParser;
+                    JsonGenerator jsonGen = jsonFactory.createGenerator(os);
+                        
+                    Reader r = new InputStreamReader(in);
+                    BufferedReader br = new BufferedReader(r);
+                    String line;
+
+                    while ((line = br.readLine()) != null) {
+                        jsonParser = jsonFactory.createParser(line);
+                        while (jsonParser.nextToken() != null) {
+                            jsonGen.copyCurrentEvent(jsonParser);
+                            if(fieldNames.contains(jsonParser.getCurrentName())) {
+                                jsonParser.nextToken();
+                                String hashedValue = hashValue(jsonParser.getText(), digest);
+                                jsonGen.writeString(hashedValue);
+                            }
+                        }
+                        jsonGen.writeRaw("\n");
                     }
+                    jsonGen.flush();
+                    out.write(os.toByteArray());
+                    writeMessageToFile(new String(os.toByteArray()));
                 }
             });
-            String content = contentRef.get();
-
-            @SuppressWarnings("unchecked")
-            Map<String,Object> contentMap = new ObjectMapper().readValue(content, LinkedHashMap.class);
-
-            for(String fieldName : fieldNames) {
-                if (contentMap.containsKey(fieldName)) {
-                    String valueToHash = contentMap.get(fieldName).toString();
-                    byte[] hash = digest.digest(valueToHash.getBytes(StandardCharsets.UTF_8));
-
-                    StringBuffer buffer = new StringBuffer();
-                    for (byte b : hash) {
-                        buffer.append(Integer.toString((b & 0xff) + 0x100, 16).substring(1));
-                    }
-
-                    String hashedValue = buffer.toString();
-                    contentMap.replace(fieldName, valueToHash, hashedValue);
-                }
-            }
-
-            String newContentString = new ObjectMapper().writeValueAsString(contentMap);
-            if(flowFormat == "AVRO") {
-                byte[] newContent = jsonToAvro(newContentString, schemaString);
-                flowFile = session.write(flowFile, outputStream -> outputStream.write(newContent));
-            } else if (flowFormat == "JSON") {
-                flowFile = session.write(flowFile, outputStream -> outputStream.write(newContentString.getBytes()));
-            }
             
             session.transfer(flowFile, REL_SUCCESS);
 
