@@ -49,34 +49,34 @@ public class EncryptValueAvroTest {
 
     @Test
     public void testNoEncryption() throws IOException {
-        runner.setProperty(EncryptValue.FLOW_FORMAT, "AVRO");
-        runner.setProperty(EncryptValue.AVRO_SCHEMA, avroSchema);
-        runner.setProperty(EncryptValue.HASH_ALG, "SHA-512");
+        runner.setProperty(EncryptValueProperties.FLOW_FORMAT, "AVRO");
+        runner.setProperty(EncryptValueProperties.AVRO_SCHEMA, avroSchema);
+        runner.setProperty(EncryptValueProperties.HASH_ALG, "SHA-512");
 
         runner.enqueue(unencryptedFile);
 
         runner.run();
         runner.assertQueueEmpty();
-        runner.assertAllFlowFilesTransferred(EncryptValue.REL_SUCCESS, 1);
+        runner.assertAllFlowFilesTransferred(EncryptValueRelationships.REL_SUCCESS, 1);
 
-        final MockFlowFile outFile = runner.getFlowFilesForRelationship(EncryptValue.REL_SUCCESS).get(0);
+        final MockFlowFile outFile = runner.getFlowFilesForRelationship(EncryptValueRelationships.REL_SUCCESS).get(0);
 
         outFile.assertContentEquals(unencryptedFile);
     }
 
     private void testEncryption(final String hashAlgorithm, final Path encryptedFile) throws IOException {
-        runner.setProperty(EncryptValue.FIELD_NAMES, "card_number,last_name");
-        runner.setProperty(EncryptValue.FLOW_FORMAT, "AVRO");
-        runner.setProperty(EncryptValue.AVRO_SCHEMA, avroSchema);
-        runner.setProperty(EncryptValue.HASH_ALG, hashAlgorithm);
+        runner.setProperty(EncryptValueProperties.FIELD_NAMES, "card_number,last_name");
+        runner.setProperty(EncryptValueProperties.FLOW_FORMAT, "AVRO");
+        runner.setProperty(EncryptValueProperties.AVRO_SCHEMA, avroSchema);
+        runner.setProperty(EncryptValueProperties.HASH_ALG, hashAlgorithm);
 
         runner.enqueue(unencryptedFile);
 
         runner.run();
         runner.assertQueueEmpty();
-        runner.assertAllFlowFilesTransferred(EncryptValue.REL_SUCCESS, 1);
+        runner.assertAllFlowFilesTransferred(EncryptValueRelationships.REL_SUCCESS, 1);
 
-        final MockFlowFile outFile = runner.getFlowFilesForRelationship(EncryptValue.REL_SUCCESS).get(0);
+        final MockFlowFile outFile = runner.getFlowFilesForRelationship(EncryptValueRelationships.REL_SUCCESS).get(0);
 
         outFile.assertContentEquals(encryptedFile);
     }
