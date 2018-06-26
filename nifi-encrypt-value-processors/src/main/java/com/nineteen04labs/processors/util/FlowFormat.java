@@ -22,6 +22,8 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileStream;
@@ -35,30 +37,32 @@ import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.io.JsonEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FlowFormat {
+
+    private static final Logger logger = LoggerFactory.getLogger(FlowFormat.class);
     
-    public static String avroToJsonString(InputStream input, Schema schema) throws IOException {
-        boolean pretty = false;
-        GenericDatumReader<GenericRecord> reader = null;
-        JsonEncoder encoder = null;
-        ByteArrayOutputStream output = null;
-        try {
-            reader = new GenericDatumReader<GenericRecord>();
-            DataFileStream<GenericRecord> streamReader = new DataFileStream<GenericRecord>(input, reader);
-            output = new ByteArrayOutputStream();
-            DatumWriter<GenericRecord> writer = new GenericDatumWriter<GenericRecord>(schema);
-            encoder = EncoderFactory.get().jsonEncoder(schema, output, pretty);
-            for (GenericRecord datum : streamReader) {
-                writer.write(datum, encoder);
-            }
-            streamReader.close();
-            encoder.flush();
-            output.flush();
-            return new String(output.toByteArray());
-        } finally {
-            try { if (output != null) output.close(); } catch (Exception e) { }
+    public static InputStream avroToJson(InputStream input, String schemaString) throws IOException {
+        Schema schema = new Schema.Parser().parse(schemaString);
+
+        GenericDatumReader<GenericRecord> reader = new GenericDatumReader<GenericRecord>();
+        DataFileStream<GenericRecord> streamReader = new DataFileStream<GenericRecord>(input, reader);
+        DatumWriter<GenericRecord> writer = new GenericDatumWriter<GenericRecord>(schema);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        JsonEncoder encoder = EncoderFactory.get().jsonEncoder(schema, baos);
+
+        for (GenericRecord datum : streamReader) {
+            writer.write(datum, encoder);
         }
+
+        streamReader.close();
+        encoder.flush();
+        baos.flush();
+
+        return convertStream(baos);
     }
 
     public static byte[] jsonToAvro(String json, String schemaStr) throws IOException {
@@ -89,5 +93,25 @@ public class FlowFormat {
         } finally {
             try { input.close(); } catch (Exception e) { }
         }
+    }
+
+    public static InputStream convertStream(ByteArrayOutputStream baos) throws IOException {
+        PipedInputStream pin = new PipedInputStream();
+        PipedOutputStream pout = new PipedOutputStream(pin);
+
+        new Thread(
+            new Runnable() {
+                public void run() {
+                    try {
+                        baos.writeTo(pout);
+                        pout.close();
+                    } catch (IOException e) {
+                        logger.error(e.getMessage());
+                    }
+                }
+            }
+        ).start();
+
+        return pin;
     }
 }

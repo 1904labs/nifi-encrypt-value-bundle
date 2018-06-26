@@ -35,6 +35,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.nineteen04labs.processors.util.DebugHelper;
 import com.nineteen04labs.processors.util.Encryption;
+import com.nineteen04labs.processors.util.FlowFormat;
 
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
@@ -104,16 +105,21 @@ public class EncryptValue extends AbstractProcessor {
                 public void process(InputStream in, OutputStream out) throws IOException {
                     JsonFactory jsonFactory = new JsonFactory().setRootValueSeparator(null);
 
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
                     JsonParser jsonParser;
-                    JsonGenerator jsonGen = jsonFactory.createGenerator(os);
-                        
+                    JsonGenerator jsonGen = jsonFactory.createGenerator(baos);
+
+                    if (flowFormat == "AVRO") {
+                        in = FlowFormat.avroToJson(in, schemaString);
+                    }
+
                     Reader r = new InputStreamReader(in);
                     BufferedReader br = new BufferedReader(r);
                     String line;
 
                     while ((line = br.readLine()) != null) {
+                        DebugHelper.writeMessageToFile("Line: " +line, "src/test/resources/debug.txt");
                         jsonParser = jsonFactory.createParser(line);
                         while (jsonParser.nextToken() != null) {
                             jsonGen.copyCurrentEvent(jsonParser);
@@ -126,8 +132,8 @@ public class EncryptValue extends AbstractProcessor {
                         jsonGen.writeRaw("\n");
                     }
                     jsonGen.flush();
-                    out.write(os.toByteArray());
-                    DebugHelper.writeMessageToFile(new String(os.toByteArray()), "src/test/resources/debug.json");
+                    out.write(baos.toByteArray());
+                    DebugHelper.writeMessageToFile(new String(baos.toByteArray()), "src/test/resources/debug.json");
                 }
             });
             
@@ -135,6 +141,7 @@ public class EncryptValue extends AbstractProcessor {
 
         } catch (ProcessException e) {
             getLogger().error("Something went wrong", e);
+            DebugHelper.writeMessageToFile(e.getMessage(), "src/test/resources/FLOW_FAIL.txt");
             session.transfer(flowFile, EncryptValueRelationships.REL_FAILURE);
         }
     }
