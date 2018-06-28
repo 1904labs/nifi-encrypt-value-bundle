@@ -23,10 +23,8 @@ import java.nio.file.Paths;
 import org.apache.nifi.util.MockFlowFile;
 import org.apache.nifi.util.TestRunner;
 import org.apache.nifi.util.TestRunners;
-import org.junit.Ignore;
 import org.junit.Test;
 
-@Ignore
 public class EncryptValueJsonTest {
 
     private final Path unencryptedFile = Paths.get("src/test/resources/unencrypted.json");
@@ -47,9 +45,9 @@ public class EncryptValueJsonTest {
 
         runner.run();
         runner.assertQueueEmpty();
-        runner.assertAllFlowFilesTransferred(EncryptValueRelationships.REL_SUCCESS, 1);
+        runner.assertAllFlowFilesTransferred(EncryptValueRelationships.REL_BYPASS, 1);
 
-        final MockFlowFile outFile = runner.getFlowFilesForRelationship(EncryptValueRelationships.REL_SUCCESS).get(0);
+        final MockFlowFile outFile = runner.getFlowFilesForRelationship(EncryptValueRelationships.REL_BYPASS).get(0);
 
         outFile.assertContentEquals(unencryptedFile);
     }

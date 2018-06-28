@@ -26,7 +26,7 @@ public class EncryptValueProperties {
     public static final PropertyDescriptor FLOW_FORMAT = new PropertyDescriptor
             .Builder().name("FLOW_FORMAT")
             .displayName("FlowFile Format")
-            .description("Specify the format of the incoming FlowFile")
+            .description("Specify the format of the incoming FlowFile. If AVRO, output is automatically Snappy compressed.")
             .required(true)
             .allowableValues("JSON", "AVRO")
             .defaultValue("JSON")

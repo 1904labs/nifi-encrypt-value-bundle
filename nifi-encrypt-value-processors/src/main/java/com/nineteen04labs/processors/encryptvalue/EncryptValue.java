@@ -33,9 +33,8 @@ import java.util.Set;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.nineteen04labs.processors.util.DebugHelper;
 import com.nineteen04labs.processors.util.Encryption;
-import com.nineteen04labs.processors.util.FlowFormat;
+import com.nineteen04labs.processors.util.FormatStream;
 
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
@@ -68,6 +67,7 @@ public class EncryptValue extends AbstractProcessor {
         final Set<Relationship> relationships = new HashSet<Relationship>();
         relationships.add(EncryptValueRelationships.REL_SUCCESS);
         relationships.add(EncryptValueRelationships.REL_FAILURE);
+        relationships.add(EncryptValueRelationships.REL_BYPASS);
         this.relationships = Collections.unmodifiableSet(relationships);
     }
 
@@ -88,17 +88,15 @@ public class EncryptValue extends AbstractProcessor {
             return;
         }
         try {
-            String rawFieldNames = context.getProperty(EncryptValueProperties.FIELD_NAMES).getValue();
+            final String rawFieldNames = context.getProperty(EncryptValueProperties.FIELD_NAMES).getValue();
             if (rawFieldNames == null) {
-                session.transfer(flowFile, EncryptValueRelationships.REL_SUCCESS);
+                session.transfer(flowFile, EncryptValueRelationships.REL_BYPASS);
                 return;
             }
             final List<String> fieldNames = Arrays.asList(rawFieldNames.split(","));
-
-            String algorithm = context.getProperty(EncryptValueProperties.HASH_ALG).getValue();
-
-            String flowFormat = context.getProperty(EncryptValueProperties.FLOW_FORMAT).getValue();
-            String schemaString = context.getProperty(EncryptValueProperties.AVRO_SCHEMA).getValue();
+            final String flowFormat = context.getProperty(EncryptValueProperties.FLOW_FORMAT).getValue();
+            final String schemaString = context.getProperty(EncryptValueProperties.AVRO_SCHEMA).getValue();
+            final String algorithm = context.getProperty(EncryptValueProperties.HASH_ALG).getValue();
             
             session.write(flowFile, new StreamCallback(){
                 @Override
@@ -110,16 +108,14 @@ public class EncryptValue extends AbstractProcessor {
                     JsonParser jsonParser;
                     JsonGenerator jsonGen = jsonFactory.createGenerator(baos);
 
-                    if (flowFormat == "AVRO") {
-                        in = FlowFormat.avroToJson(in, schemaString);
-                    }
+                    if (flowFormat == "AVRO")
+                        in = FormatStream.avroToJson(in, schemaString);
 
                     Reader r = new InputStreamReader(in);
                     BufferedReader br = new BufferedReader(r);
                     String line;
 
                     while ((line = br.readLine()) != null) {
-                        DebugHelper.writeMessageToFile("Line: " +line, "src/test/resources/debug.txt");
                         jsonParser = jsonFactory.createParser(line);
                         while (jsonParser.nextToken() != null) {
                             jsonGen.copyCurrentEvent(jsonParser);
@@ -132,8 +128,11 @@ public class EncryptValue extends AbstractProcessor {
                         jsonGen.writeRaw("\n");
                     }
                     jsonGen.flush();
-                    out.write(baos.toByteArray());
-                    DebugHelper.writeMessageToFile(new String(baos.toByteArray()), "src/test/resources/debug.json");
+
+                    if (flowFormat == "AVRO")
+                        baos = FormatStream.jsonToAvro(baos, schemaString);
+
+                    baos.writeTo(out);
                 }
             });
             
@@ -141,7 +140,6 @@ public class EncryptValue extends AbstractProcessor {
 
         } catch (ProcessException e) {
             getLogger().error("Something went wrong", e);
-            DebugHelper.writeMessageToFile(e.getMessage(), "src/test/resources/FLOW_FAIL.txt");
             session.transfer(flowFile, EncryptValueRelationships.REL_FAILURE);
         }
     }

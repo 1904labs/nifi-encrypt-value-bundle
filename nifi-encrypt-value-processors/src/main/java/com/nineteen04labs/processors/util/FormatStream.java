@@ -16,9 +16,7 @@
  */
 package com.nineteen04labs.processors.util;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,11 +24,11 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
 import org.apache.avro.Schema;
+import org.apache.avro.file.CodecFactory;
 import org.apache.avro.file.DataFileStream;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
-import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Decoder;
@@ -40,62 +38,60 @@ import org.apache.avro.io.JsonEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FlowFormat {
+public class FormatStream {
 
-    private static final Logger logger = LoggerFactory.getLogger(FlowFormat.class);
+    private static final Logger logger = LoggerFactory.getLogger(FormatStream.class);
     
-    public static InputStream avroToJson(InputStream input, String schemaString) throws IOException {
+    public static InputStream avroToJson(InputStream in, String schemaString) throws IOException {
         Schema schema = new Schema.Parser().parse(schemaString);
 
-        GenericDatumReader<GenericRecord> reader = new GenericDatumReader<GenericRecord>();
-        DataFileStream<GenericRecord> streamReader = new DataFileStream<GenericRecord>(input, reader);
-        DatumWriter<GenericRecord> writer = new GenericDatumWriter<GenericRecord>(schema);
+        GenericDatumReader<Object> reader = new GenericDatumReader<Object>();
+        DataFileStream<Object> streamReader = new DataFileStream<Object>(in, reader);
+        DatumWriter<Object> writer = new GenericDatumWriter<Object>(schema);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         JsonEncoder encoder = EncoderFactory.get().jsonEncoder(schema, baos);
 
-        for (GenericRecord datum : streamReader) {
+        for (Object datum : streamReader)
             writer.write(datum, encoder);
-        }
 
-        streamReader.close();
         encoder.flush();
         baos.flush();
+        streamReader.close();
 
         return convertStream(baos);
     }
 
-    public static byte[] jsonToAvro(String json, String schemaStr) throws IOException {
-        InputStream input = null;
-        DataFileWriter<GenericRecord> writer = null;
-        ByteArrayOutputStream output = null;
-        try {
-            Schema schema = new Schema.Parser().parse(schemaStr);
-            DatumReader<GenericRecord> reader = new GenericDatumReader<GenericRecord>(schema);
-            input = new ByteArrayInputStream(json.getBytes());
-            output = new ByteArrayOutputStream();
-            DataInputStream din = new DataInputStream(input);
-            writer = new DataFileWriter<GenericRecord>(new GenericDatumWriter<GenericRecord>());
-            writer.create(schema, output);
-            Decoder decoder = DecoderFactory.get().jsonDecoder(schema, din);
-            GenericRecord datum;
-            while (true) {
-                try {
-                    datum = reader.read(null, decoder);
-                } catch (EOFException eofe) {
-                    break;
-                }
-                writer.append(datum);
+    public static ByteArrayOutputStream jsonToAvro(ByteArrayOutputStream jsonStream, String schemaString) throws IOException {
+        Schema schema = new Schema.Parser().parse(schemaString);
+        
+        InputStream input = convertStream(jsonStream);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        DatumReader<Object> reader = new GenericDatumReader<Object>(schema);
+        DataFileWriter<Object> writer = new DataFileWriter<Object>(new GenericDatumWriter<Object>());
+        writer.setCodec(CodecFactory.snappyCodec());
+        writer.create(schema, baos);
+
+        Decoder decoder = DecoderFactory.get().jsonDecoder(schema, input);
+        Object datum;
+
+        while (true) {
+            try {
+                datum = reader.read(null, decoder);
+            } catch (EOFException eofe) {
+                break;
             }
-            writer.flush();
-            writer.close();
-            return output.toByteArray();
-        } finally {
-            try { input.close(); } catch (Exception e) { }
+            writer.append(datum);
         }
+
+        writer.close();
+        input.close();
+
+        return baos;
     }
 
-    public static InputStream convertStream(ByteArrayOutputStream baos) throws IOException {
+    private static InputStream convertStream(ByteArrayOutputStream baos) throws IOException {
         PipedInputStream pin = new PipedInputStream();
         PipedOutputStream pout = new PipedOutputStream(pin);
 

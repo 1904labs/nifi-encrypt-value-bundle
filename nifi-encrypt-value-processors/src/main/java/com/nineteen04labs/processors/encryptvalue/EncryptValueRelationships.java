@@ -20,14 +20,18 @@ import org.apache.nifi.processor.Relationship;
 
 public class EncryptValueRelationships {
 
-    public static final Relationship REL_SUCCESS = new Relationship.Builder()
-            .name("success")
-            .description("FlowFiles that are processed successfully will be sent to this relationship")
-            .build();
+        public static final Relationship REL_SUCCESS = new Relationship.Builder()
+                .name("success")
+                .description("FlowFiles that are processed successfully will be sent to this relationship")
+                .build();
 
-    public static final Relationship REL_FAILURE = new Relationship.Builder()
-            .name("failure")
-            .description("FlowFiles that cannot be processed successfully will be sent to this relationship")
-            .build();
+        public static final Relationship REL_FAILURE = new Relationship.Builder()
+                .name("failure")
+                .description("FlowFiles that cannot be processed successfully will be sent to this relationship")
+                .build();
 
+        public static final Relationship REL_BYPASS = new Relationship.Builder()
+                .name("failure")
+                .description("FlowFiles with a null 'Field Names' property will not be processed and sent to this relationship")
+                .build();
 }

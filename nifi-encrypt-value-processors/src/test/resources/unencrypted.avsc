@@ -1,46 +1,48 @@
 {
-    "type": "record",
-    "name": "unencrypted",
-    "fields": [
-        {
-            "name": "status",
-            "type": "string"
-        },
-	{
-            "name": "first_name",
-            "type": "string"
-        },
-	{
-            "name": "last_name",
-            "type": "string"
-        },
-	{
-            "name": "title",
-            "type": "string"
-        },
-	{
-            "name": "created_at",
-            "type": "string"
-        },
-	{
-            "name": "updated_at",
-            "type": "string"
-        },
-	{
-            "name": "entity",
-            "type": "string"
-        },
-	{
-            "name": "position",
-            "type": "string"
-        },
-	{
-            "name": "id",
-            "type": "string"
-        },
-	{
-            "name": "card_number",
-            "type": "string"
-        }
-    ]
+  "type" : "record",
+  "name" : "unencrypted",
+  "fields" : [ {
+    "name" : "status",
+    "type" : "string"
+  }, {
+    "name" : "location",
+    "type" : {
+      "type" : "record",
+      "name" : "location",
+      "fields" : [ {
+        "name" : "state",
+        "type" : "string"
+      }, {
+        "name" : "country",
+        "type" : "string"
+      } ]
+    }
+  }, {
+    "name" : "first_name",
+    "type" : "string"
+  }, {
+    "name" : "last_name",
+    "type" : "string"
+  }, {
+    "name" : "title",
+    "type" : "string"
+  }, {
+    "name" : "created_at",
+    "type" : "string"
+  }, {
+    "name" : "updated_at",
+    "type" : "string"
+  }, {
+    "name" : "entity",
+    "type" : "string"
+  }, {
+    "name" : "position",
+    "type" : "string"
+  }, {
+    "name" : "id",
+    "type" : "string"
+  }, {
+    "name" : "card_number",
+    "type" : "string"
+  } ]
 }
