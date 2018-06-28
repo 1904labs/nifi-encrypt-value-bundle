@@ -33,5 +33,8 @@ $NIFI_HOME/bin/nifi.sh start
 ### TODO
 
 - ~~Add support for Avro files~~
-- Support multi-level JSON
+- ~~Support multi-level JSON~~
 - ~~Add support for more hashing algorithms~~
+- Allow choice of Avro compression (Snappy, bzip2, etc.)
+- Infer Avro schema if not passed in
+- Better unit tests for Avro
