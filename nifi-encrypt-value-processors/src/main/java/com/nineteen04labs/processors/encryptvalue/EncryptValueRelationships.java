@@ -31,7 +31,7 @@ public class EncryptValueRelationships {
                 .build();
 
         public static final Relationship REL_BYPASS = new Relationship.Builder()
-                .name("failure")
+                .name("bypass")
                 .description("FlowFiles with a null 'Field Names' property will not be processed and sent to this relationship")
                 .build();
 }
