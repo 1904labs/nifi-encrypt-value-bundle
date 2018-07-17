@@ -42,9 +42,7 @@ public class FormatStream {
 
     private static final Logger logger = LoggerFactory.getLogger(FormatStream.class);
     
-    public static InputStream avroToJson(InputStream in, String schemaString) throws IOException {
-        Schema schema = new Schema.Parser().parse(schemaString);
-
+    public static InputStream avroToJson(InputStream in, Schema schema) throws IOException {
         GenericDatumReader<Object> reader = new GenericDatumReader<Object>();
         DataFileStream<Object> streamReader = new DataFileStream<Object>(in, reader);
         DatumWriter<Object> writer = new GenericDatumWriter<Object>(schema);
@@ -62,9 +60,7 @@ public class FormatStream {
         return convertStream(baos);
     }
 
-    public static ByteArrayOutputStream jsonToAvro(ByteArrayOutputStream jsonStream, String schemaString) throws IOException {
-        Schema schema = new Schema.Parser().parse(schemaString);
-        
+    public static ByteArrayOutputStream jsonToAvro(ByteArrayOutputStream jsonStream, Schema schema) throws IOException {
         InputStream input = convertStream(jsonStream);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 

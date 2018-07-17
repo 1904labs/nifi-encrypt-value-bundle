@@ -33,9 +33,11 @@ import java.util.Set;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.nineteen04labs.processors.util.Encryption;
 import com.nineteen04labs.processors.util.FormatStream;
 
+import org.apache.avro.Schema;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.components.PropertyDescriptor;
@@ -108,8 +110,11 @@ public class EncryptValue extends AbstractProcessor {
                     JsonParser jsonParser;
                     JsonGenerator jsonGen = jsonFactory.createGenerator(baos);
 
-                    if (flowFormat == "AVRO")
-                        in = FormatStream.avroToJson(in, schemaString);
+                    Schema schema = null;
+                    if (flowFormat == "AVRO") {
+                        schema = new Schema.Parser().parse(schemaString);
+                        in = FormatStream.avroToJson(in, schema);
+                    }
 
                     Reader r = new InputStreamReader(in);
                     BufferedReader br = new BufferedReader(r);
@@ -119,10 +124,35 @@ public class EncryptValue extends AbstractProcessor {
                         jsonParser = jsonFactory.createParser(line);
                         while (jsonParser.nextToken() != null) {
                             jsonGen.copyCurrentEvent(jsonParser);
-                            if(fieldNames.contains(jsonParser.getCurrentName())) {
-                                jsonParser.nextToken();
-                                String hashedValue = Encryption.hashValue(jsonParser.getText(), algorithm);
-                                jsonGen.writeString(hashedValue);
+                            String tokenName = jsonParser.getCurrentName();
+                            if(fieldNames.contains(tokenName)) {
+                                String valueToHash = null;
+                                String hashedValue = null;
+                                //This is too fragile and ugly
+                                if (schema != null) {
+                                    if (schema.getField(tokenName).schema().getType() == Schema.Type.UNION) {
+                                        if (jsonParser.currentToken() == JsonToken.START_OBJECT) {
+                                            while (jsonParser.nextToken() != JsonToken.END_OBJECT) {
+                                                valueToHash = jsonParser.getText();
+                                            }
+                                            hashedValue = Encryption.hashValue(valueToHash, algorithm);
+                                            jsonGen.writeFieldName("string");
+                                            jsonGen.writeString(hashedValue);
+                                            jsonGen.writeEndObject();
+                                        }
+                                    } else {
+                                        jsonParser.nextToken();
+                                        valueToHash = jsonParser.getText();
+                                        hashedValue = Encryption.hashValue(valueToHash, algorithm);
+                                        jsonGen.writeString(hashedValue);
+                                    }
+                                }
+                                else {
+                                    jsonParser.nextToken();
+                                    valueToHash = jsonParser.getText();
+                                    hashedValue = Encryption.hashValue(valueToHash, algorithm);
+                                    jsonGen.writeString(hashedValue);
+                                }
                             }
                         }
                         jsonGen.writeRaw("\n");
@@ -130,7 +160,7 @@ public class EncryptValue extends AbstractProcessor {
                     jsonGen.flush();
 
                     if (flowFormat == "AVRO")
-                        baos = FormatStream.jsonToAvro(baos, schemaString);
+                        baos = FormatStream.jsonToAvro(baos, schema);
 
                     baos.writeTo(out);
                 }

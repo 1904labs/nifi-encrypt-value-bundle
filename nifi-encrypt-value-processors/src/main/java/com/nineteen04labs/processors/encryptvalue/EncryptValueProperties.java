@@ -38,6 +38,7 @@ public class EncryptValueProperties {
             .description("Specify the schema if the FlowFile format is Avro.")
             .required(false)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+            .expressionLanguageSupported(true)
             .build();
 
     public static final PropertyDescriptor FIELD_NAMES = new PropertyDescriptor
@@ -46,6 +47,7 @@ public class EncryptValueProperties {
             .description("Comma separated list of fields whose values to encrypt.")
             .required(false)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+            .expressionLanguageSupported(true)
             .build();
     
     public static final PropertyDescriptor HASH_ALG = new PropertyDescriptor

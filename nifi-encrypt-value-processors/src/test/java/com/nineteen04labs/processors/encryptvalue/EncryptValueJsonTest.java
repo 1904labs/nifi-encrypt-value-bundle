@@ -40,6 +40,7 @@ public class EncryptValueJsonTest {
     public void testNoEncryption() throws IOException {
         runner.setProperty(EncryptValueProperties.FLOW_FORMAT, "JSON");
         runner.setProperty(EncryptValueProperties.HASH_ALG, "SHA-512");
+        runner.setValidateExpressionUsage(false);
 
         runner.enqueue(unencryptedFile);
 
@@ -53,9 +54,10 @@ public class EncryptValueJsonTest {
     }
 
     private void testEncryption(final String hashAlgorithm, final Path encryptedFile) throws IOException {
-        runner.setProperty(EncryptValueProperties.FIELD_NAMES, "card_number,last_name");
+        runner.setProperty(EncryptValueProperties.FIELD_NAMES, "first_name,last_name,card_number");
         runner.setProperty(EncryptValueProperties.FLOW_FORMAT, "JSON");
         runner.setProperty(EncryptValueProperties.HASH_ALG, hashAlgorithm);
+        runner.setValidateExpressionUsage(false);
 
         runner.enqueue(unencryptedFile);
 

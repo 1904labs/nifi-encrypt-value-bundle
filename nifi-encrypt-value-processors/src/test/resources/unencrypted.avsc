@@ -19,7 +19,7 @@
     }
   }, {
     "name" : "first_name",
-    "type" : "string"
+    "type" : ["null","string"]
   }, {
     "name" : "last_name",
     "type" : "string"

@@ -41,8 +41,7 @@ public class EncryptValueAvroTest {
 
     @Test
     public void testSHA512() throws IOException {
-        Path sha512File = Paths.get("src/test/resources/sha512.avro");
-        testEncryption("SHA-512", sha512File);
+        testEncryption("SHA-512");
     }
 
     @Test
@@ -50,6 +49,7 @@ public class EncryptValueAvroTest {
         runner.setProperty(EncryptValueProperties.FLOW_FORMAT, "AVRO");
         runner.setProperty(EncryptValueProperties.AVRO_SCHEMA, avroSchema);
         runner.setProperty(EncryptValueProperties.HASH_ALG, "SHA-512");
+        runner.setValidateExpressionUsage(false);
 
         runner.enqueue(unencryptedFile);
 
@@ -62,21 +62,18 @@ public class EncryptValueAvroTest {
         outFile.assertContentEquals(unencryptedFile);
     }
 
-    private void testEncryption(final String hashAlgorithm, final Path encryptedFile) throws IOException {
-        runner.setProperty(EncryptValueProperties.FIELD_NAMES, "card_number,last_name");
+    private void testEncryption(final String hashAlgorithm) throws IOException {
+        runner.setProperty(EncryptValueProperties.FIELD_NAMES, "first_name,last_name,card_number");
         runner.setProperty(EncryptValueProperties.FLOW_FORMAT, "AVRO");
         runner.setProperty(EncryptValueProperties.AVRO_SCHEMA, avroSchema);
         runner.setProperty(EncryptValueProperties.HASH_ALG, hashAlgorithm);
+        runner.setValidateExpressionUsage(false);
 
         runner.enqueue(unencryptedFile);
 
         runner.run();
         runner.assertQueueEmpty();
         runner.assertAllFlowFilesTransferred(EncryptValueRelationships.REL_SUCCESS, 1);
-
-        //final MockFlowFile outFile = runner.getFlowFilesForRelationship(EncryptValueRelationships.REL_SUCCESS).get(0);
-
-        //outFile.assertContentEquals(encryptedFile);
     }
 
 }
