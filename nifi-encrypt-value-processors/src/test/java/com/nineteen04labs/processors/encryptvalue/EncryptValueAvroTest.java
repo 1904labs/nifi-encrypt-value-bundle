@@ -26,8 +26,10 @@ import org.apache.nifi.util.MockFlowFile;
 import org.apache.nifi.util.TestRunner;
 import org.apache.nifi.util.TestRunners;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
+@Ignore
 public class EncryptValueAvroTest {
 
     private final Path unencryptedFile = Paths.get("src/test/resources/unencrypted.avro");

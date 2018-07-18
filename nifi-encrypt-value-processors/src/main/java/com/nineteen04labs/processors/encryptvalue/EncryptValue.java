@@ -33,7 +33,6 @@ import java.util.Set;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import com.nineteen04labs.processors.util.Encryption;
 import com.nineteen04labs.processors.util.FormatStream;
 
@@ -124,33 +123,13 @@ public class EncryptValue extends AbstractProcessor {
                         jsonParser = jsonFactory.createParser(line);
                         while (jsonParser.nextToken() != null) {
                             jsonGen.copyCurrentEvent(jsonParser);
-                            String tokenName = jsonParser.getCurrentName();
-                            if(fieldNames.contains(tokenName)) {
-                                String valueToHash = null;
-                                String hashedValue = null;
-                                //This is too fragile and ugly
-                                if (schema != null) {
-                                    if (schema.getField(tokenName).schema().getType() == Schema.Type.UNION) {
-                                        if (jsonParser.currentToken() == JsonToken.START_OBJECT) {
-                                            while (jsonParser.nextToken() != JsonToken.END_OBJECT) {
-                                                valueToHash = jsonParser.getText();
-                                            }
-                                            hashedValue = Encryption.hashValue(valueToHash, algorithm);
-                                            jsonGen.writeFieldName("string");
-                                            jsonGen.writeString(hashedValue);
-                                            jsonGen.writeEndObject();
-                                        }
-                                    } else {
-                                        jsonParser.nextToken();
-                                        valueToHash = jsonParser.getText();
-                                        hashedValue = Encryption.hashValue(valueToHash, algorithm);
-                                        jsonGen.writeString(hashedValue);
-                                    }
-                                }
+                            if(fieldNames.contains(jsonParser.getCurrentName())) {
+                                jsonParser.nextToken();
+                                String valueToHash = jsonParser.getText();
+                                if ("null".equals(valueToHash))
+                                    jsonGen.writeNull();
                                 else {
-                                    jsonParser.nextToken();
-                                    valueToHash = jsonParser.getText();
-                                    hashedValue = Encryption.hashValue(valueToHash, algorithm);
+                                    String hashedValue = Encryption.hashValue(valueToHash, algorithm);
                                     jsonGen.writeString(hashedValue);
                                 }
                             }

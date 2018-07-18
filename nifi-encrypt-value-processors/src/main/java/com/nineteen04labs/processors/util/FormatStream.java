@@ -27,14 +27,14 @@ import org.apache.avro.Schema;
 import org.apache.avro.file.CodecFactory;
 import org.apache.avro.file.DataFileStream;
 import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.generic.ExtendedGenericDatumWriter;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Decoder;
-import org.apache.avro.io.DecoderFactory;
-import org.apache.avro.io.EncoderFactory;
-import org.apache.avro.io.JsonEncoder;
+import org.apache.avro.io.ExtendedJsonDecoder;
+import org.apache.avro.io.ExtendedJsonEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,10 +45,10 @@ public class FormatStream {
     public static InputStream avroToJson(InputStream in, Schema schema) throws IOException {
         GenericDatumReader<Object> reader = new GenericDatumReader<Object>();
         DataFileStream<Object> streamReader = new DataFileStream<Object>(in, reader);
-        DatumWriter<Object> writer = new GenericDatumWriter<Object>(schema);
+        DatumWriter<Object> writer = new ExtendedGenericDatumWriter<>(schema);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        JsonEncoder encoder = EncoderFactory.get().jsonEncoder(schema, baos);
+        ExtendedJsonEncoder encoder = new ExtendedJsonEncoder(schema, baos);
 
         for (Object datum : streamReader)
             writer.write(datum, encoder);
@@ -69,7 +69,7 @@ public class FormatStream {
         writer.setCodec(CodecFactory.snappyCodec());
         writer.create(schema, baos);
 
-        Decoder decoder = DecoderFactory.get().jsonDecoder(schema, input);
+        Decoder decoder = new ExtendedJsonDecoder(schema, input);
         Object datum;
 
         while (true) {

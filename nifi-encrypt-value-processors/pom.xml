@@ -20,7 +20,7 @@
     <parent>
         <groupId>com.nineteen04labs</groupId>
         <artifactId>nifi-encrypt-value-bundle</artifactId>
-        <version>18.07.1</version>
+        <version>18.07.2</version>
     </parent>
 
     <artifactId>nifi-encrypt-value-processors</artifactId>
@@ -40,11 +40,36 @@
             <artifactId>commons-io</artifactId>
             <version>2.6</version>
         </dependency>
+        <!-- Import custom avro and its dependencies to handle union file types -->
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
-            <version>1.8.2</version>
+            <version>1.8.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/avro-1.8.0-zolyfarkas.jar</systemPath>
         </dependency>
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
+            <version>1.9.13</version>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
+            <version>1.9.13</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>19.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.xerial.snappy</groupId>
+            <artifactId>snappy-java</artifactId>
+            <version>1.1.7.2</version>
+        </dependency>
+        <!-- End of custom avro and dependencies -->
+        <!-- Need newer Jackson lib for JsonFactory -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
