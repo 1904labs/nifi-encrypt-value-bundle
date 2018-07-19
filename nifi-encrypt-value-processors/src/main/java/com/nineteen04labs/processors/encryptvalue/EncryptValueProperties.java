@@ -53,10 +53,19 @@ public class EncryptValueProperties {
     public static final PropertyDescriptor HASH_ALG = new PropertyDescriptor
             .Builder().name("HASH_ALG")
             .displayName("Hash Algorithm")
-            .description("Determines what hashing algorithm should be used to perform the encryption")
+            .description("Determines what hashing algorithm should be used to perform the encryption.")
             .required(true)
             .allowableValues(Encryption.getAvailableAlgorithms())
             .defaultValue("SHA-512")
+            .build();
+
+    public static final PropertyDescriptor SALT = new PropertyDescriptor
+            .Builder().name("SALT")
+            .displayName("Salt")
+            .description("Salt used in hashing.")
+            .required(false)
+            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+            .expressionLanguageSupported(true)
             .build();
 
 }

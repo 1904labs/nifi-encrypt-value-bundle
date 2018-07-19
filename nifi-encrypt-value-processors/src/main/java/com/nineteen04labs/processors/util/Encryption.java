@@ -41,9 +41,11 @@ public class Encryption {
         return algorithms;
     }
 
-    public static String hashValue(String valueToHash, String algorithm) {
+    public static String hashValue(String valueToHash, String salt, String algorithm) {
         try{
             MessageDigest digest = MessageDigest.getInstance(algorithm);
+            if (salt != null)
+                digest.update(salt.getBytes());
             byte[] hash = digest.digest(valueToHash.getBytes(StandardCharsets.UTF_8));
             StringBuffer buffer = new StringBuffer();
             for (byte b : hash) {

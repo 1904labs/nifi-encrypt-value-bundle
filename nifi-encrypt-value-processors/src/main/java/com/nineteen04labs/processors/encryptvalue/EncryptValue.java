@@ -49,7 +49,7 @@ import org.apache.nifi.processor.Relationship;
 import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.io.StreamCallback;
 
-@Tags({"encrypt", "hash", "json", "pii"})
+@Tags({"encrypt", "hash", "json", "pii", "salt"})
 @CapabilityDescription("Encrypts the values of the given fields of a FlowFile. The original value is replaced with the hashed one.")
 public class EncryptValue extends AbstractProcessor {
 
@@ -63,6 +63,7 @@ public class EncryptValue extends AbstractProcessor {
         descriptors.add(EncryptValueProperties.AVRO_SCHEMA);
         descriptors.add(EncryptValueProperties.FIELD_NAMES);
         descriptors.add(EncryptValueProperties.HASH_ALG);
+        descriptors.add(EncryptValueProperties.SALT);
         this.descriptors = Collections.unmodifiableList(descriptors);
 
         final Set<Relationship> relationships = new HashSet<Relationship>();
@@ -98,6 +99,7 @@ public class EncryptValue extends AbstractProcessor {
             final String flowFormat = context.getProperty(EncryptValueProperties.FLOW_FORMAT).getValue();
             final String schemaString = context.getProperty(EncryptValueProperties.AVRO_SCHEMA).getValue();
             final String algorithm = context.getProperty(EncryptValueProperties.HASH_ALG).getValue();
+            final String salt = context.getProperty(EncryptValueProperties.SALT).getValue();
             
             session.write(flowFile, new StreamCallback(){
                 @Override
@@ -129,7 +131,7 @@ public class EncryptValue extends AbstractProcessor {
                                 if ("null".equals(valueToHash))
                                     jsonGen.writeNull();
                                 else {
-                                    String hashedValue = Encryption.hashValue(valueToHash, algorithm);
+                                    String hashedValue = Encryption.hashValue(valueToHash, salt, algorithm);
                                     jsonGen.writeString(hashedValue);
                                 }
                             }

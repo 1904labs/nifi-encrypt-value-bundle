@@ -26,10 +26,8 @@ import org.apache.nifi.util.MockFlowFile;
 import org.apache.nifi.util.TestRunner;
 import org.apache.nifi.util.TestRunners;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
-@Ignore
 public class EncryptValueAvroTest {
 
     private final Path unencryptedFile = Paths.get("src/test/resources/unencrypted.avro");
@@ -51,6 +49,7 @@ public class EncryptValueAvroTest {
         runner.setProperty(EncryptValueProperties.FLOW_FORMAT, "AVRO");
         runner.setProperty(EncryptValueProperties.AVRO_SCHEMA, avroSchema);
         runner.setProperty(EncryptValueProperties.HASH_ALG, "SHA-512");
+        runner.setProperty(EncryptValueProperties.SALT, "ef3de698a8956f6eff8b7344407d861b7");
         runner.setValidateExpressionUsage(false);
 
         runner.enqueue(unencryptedFile);
@@ -69,6 +68,7 @@ public class EncryptValueAvroTest {
         runner.setProperty(EncryptValueProperties.FLOW_FORMAT, "AVRO");
         runner.setProperty(EncryptValueProperties.AVRO_SCHEMA, avroSchema);
         runner.setProperty(EncryptValueProperties.HASH_ALG, hashAlgorithm);
+        runner.setProperty(EncryptValueProperties.SALT, "ef3de698a8956f6eff8b7344407d861b7");
         runner.setValidateExpressionUsage(false);
 
         runner.enqueue(unencryptedFile);
