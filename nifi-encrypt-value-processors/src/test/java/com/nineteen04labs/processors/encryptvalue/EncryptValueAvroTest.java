@@ -52,7 +52,6 @@ public class EncryptValueAvroTest {
         runner.setProperty(EncryptValueProperties.AVRO_SCHEMA, avroSchema);
         runner.setProperty(EncryptValueProperties.HASH_ALG, "SHA-512");
         runner.setProperty(EncryptValueProperties.SALT, "ef3de698a8956f6eff8b7344407d861b7");
-        runner.setValidateExpressionUsage(false);
 
         runner.enqueue(unencryptedFile);
 
@@ -71,7 +70,6 @@ public class EncryptValueAvroTest {
         runner.setProperty(EncryptValueProperties.AVRO_SCHEMA, avroSchema);
         runner.setProperty(EncryptValueProperties.HASH_ALG, hashAlgorithm);
         runner.setProperty(EncryptValueProperties.SALT, "ef3de698a8956f6eff8b7344407d861b7");
-        runner.setValidateExpressionUsage(false);
 
         runner.enqueue(unencryptedFile);
 
@@ -85,7 +83,6 @@ public class EncryptValueAvroTest {
         runner.setProperty(EncryptValueProperties.FLOW_FORMAT, "AVRO");
         runner.setProperty(EncryptValueProperties.HASH_ALG, hashAlgorithm);
         runner.setProperty(EncryptValueProperties.SALT, "ef3de698a8956f6eff8b7344407d861b7");
-        runner.setValidateExpressionUsage(false);
 
         runner.enqueue(unencryptedFile);
 

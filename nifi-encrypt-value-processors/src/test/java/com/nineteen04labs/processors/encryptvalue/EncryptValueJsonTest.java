@@ -41,7 +41,6 @@ public class EncryptValueJsonTest {
         runner.setProperty(EncryptValueProperties.FLOW_FORMAT, "JSON");
         runner.setProperty(EncryptValueProperties.HASH_ALG, "SHA-512");
         runner.setProperty(EncryptValueProperties.SALT, "ef3de698a8956f6eff8b7344407d861b7");
-        runner.setValidateExpressionUsage(false);
 
         runner.enqueue(unencryptedFile);
 
@@ -59,7 +58,6 @@ public class EncryptValueJsonTest {
         runner.setProperty(EncryptValueProperties.FLOW_FORMAT, "JSON");
         runner.setProperty(EncryptValueProperties.HASH_ALG, hashAlgorithm);
         runner.setProperty(EncryptValueProperties.SALT, "ef3de698a8956f6eff8b7344407d861b7");
-        runner.setValidateExpressionUsage(false);
 
         runner.enqueue(unencryptedFile);
 
