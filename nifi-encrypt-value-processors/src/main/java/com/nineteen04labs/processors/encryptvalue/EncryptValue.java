@@ -90,16 +90,16 @@ public class EncryptValue extends AbstractProcessor {
             return;
         }
         try {
-            final String rawFieldNames = context.getProperty(EncryptValueProperties.FIELD_NAMES).getValue();
+            final String rawFieldNames = context.getProperty(EncryptValueProperties.FIELD_NAMES).evaluateAttributeExpressions(flowFile).getValue();
             if (rawFieldNames == null) {
                 session.transfer(flowFile, EncryptValueRelationships.REL_BYPASS);
                 return;
             }
             final List<String> fieldNames = Arrays.asList(rawFieldNames.split(","));
             final String flowFormat = context.getProperty(EncryptValueProperties.FLOW_FORMAT).getValue();
-            final String schemaString = context.getProperty(EncryptValueProperties.AVRO_SCHEMA).getValue();
+            final String schemaString = context.getProperty(EncryptValueProperties.AVRO_SCHEMA).evaluateAttributeExpressions(flowFile).getValue();
             final String algorithm = context.getProperty(EncryptValueProperties.HASH_ALG).getValue();
-            final String salt = context.getProperty(EncryptValueProperties.SALT).getValue();
+            final String salt = context.getProperty(EncryptValueProperties.SALT).evaluateAttributeExpressions(flowFile).getValue();
             
             session.write(flowFile, new StreamCallback(){
                 @Override
@@ -112,7 +112,7 @@ public class EncryptValue extends AbstractProcessor {
                     JsonGenerator jsonGen = jsonFactory.createGenerator(baos);
 
                     Schema schema = null;
-                    if (flowFormat == "AVRO") {
+                    if (flowFormat.equals("AVRO")) {
                         schema = new Schema.Parser().parse(schemaString);
                         in = FormatStream.avroToJson(in, schema);
                     }
@@ -140,7 +140,7 @@ public class EncryptValue extends AbstractProcessor {
                     }
                     jsonGen.flush();
 
-                    if (flowFormat == "AVRO")
+                    if (flowFormat.equals("AVRO"))
                         baos = FormatStream.jsonToAvro(baos, schema);
 
                     baos.writeTo(out);
