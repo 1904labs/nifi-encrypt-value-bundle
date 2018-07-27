@@ -14,7 +14,8 @@ Build the bundle
 
 ```shell
 cd nifi-encrypt-value-bundle
-mvn clean install
+mvn validate
+mvn clean package
 ```
 
 Copy Nar file to $NIFI_HOME/lib
@@ -56,7 +57,7 @@ Determines what hashing algorithm should be used to perform the encryption
 - ~~Add support for Avro files~~
 - ~~Support multi-level JSON~~
 - ~~Add support for more hashing algorithms~~
-- Support salting
+- ~~Support salting~~
 - Allow choice of Avro compression (Snappy, bzip2, etc.)
 - Infer Avro schema if not passed in
 - Better unit tests for Avro
