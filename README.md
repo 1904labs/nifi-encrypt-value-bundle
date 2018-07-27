@@ -59,5 +59,5 @@ Determines what hashing algorithm should be used to perform the encryption
 - ~~Add support for more hashing algorithms~~
 - ~~Support salting~~
 - Allow choice of Avro compression (Snappy, bzip2, etc.)
-- Infer Avro schema if not passed in
+- ~~Infer Avro schema if not passed in~~
 - Better unit tests for Avro

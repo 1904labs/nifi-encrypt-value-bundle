@@ -112,8 +112,14 @@ public class EncryptValue extends AbstractProcessor {
                     JsonGenerator jsonGen = jsonFactory.createGenerator(baos);
 
                     Schema schema = null;
+
                     if (flowFormat.equals("AVRO")) {
-                        schema = new Schema.Parser().parse(schemaString);
+                        try {
+                            schema = new Schema.Parser().parse(schemaString);
+                        } catch (NullPointerException e) {
+                            schema = FormatStream.getEmbeddedSchema(in);
+                            in.reset();
+                        }
                         in = FormatStream.avroToJson(in, schema);
                     }
 

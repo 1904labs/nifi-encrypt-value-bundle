@@ -43,7 +43,7 @@ public class FormatStream {
     private static final Logger logger = LoggerFactory.getLogger(FormatStream.class);
     
     public static InputStream avroToJson(InputStream in, Schema schema) throws IOException {
-        GenericDatumReader<Object> reader = new GenericDatumReader<Object>();
+        DatumReader<Object> reader = new GenericDatumReader<Object>();
         DataFileStream<Object> streamReader = new DataFileStream<Object>(in, reader);
         DatumWriter<Object> writer = new ExtendedGenericDatumWriter<>(schema);
 
@@ -85,6 +85,14 @@ public class FormatStream {
         input.close();
 
         return baos;
+    }
+
+    public static Schema getEmbeddedSchema(InputStream in) throws IOException {
+            DatumReader<Object> reader = new GenericDatumReader<Object>();
+            DataFileStream<Object> streamReader = new DataFileStream<Object>(in, reader);
+            streamReader.close();
+
+            return streamReader.getSchema();
     }
 
     private static InputStream convertStream(ByteArrayOutputStream baos) throws IOException {

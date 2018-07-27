@@ -42,6 +42,8 @@ public class EncryptValueAvroTest {
     @Test
     public void testSHA512() throws IOException {
         testEncryption("SHA-512");
+        runner.clearTransferState();
+        testEncryptionNoSchema("SHA-512");
     }
 
     @Test
@@ -67,6 +69,20 @@ public class EncryptValueAvroTest {
         runner.setProperty(EncryptValueProperties.FIELD_NAMES, "first_name,last_name,card_number");
         runner.setProperty(EncryptValueProperties.FLOW_FORMAT, "AVRO");
         runner.setProperty(EncryptValueProperties.AVRO_SCHEMA, avroSchema);
+        runner.setProperty(EncryptValueProperties.HASH_ALG, hashAlgorithm);
+        runner.setProperty(EncryptValueProperties.SALT, "ef3de698a8956f6eff8b7344407d861b7");
+        runner.setValidateExpressionUsage(false);
+
+        runner.enqueue(unencryptedFile);
+
+        runner.run();
+        runner.assertQueueEmpty();
+        runner.assertAllFlowFilesTransferred(EncryptValueRelationships.REL_SUCCESS, 1);
+    }
+
+    private void testEncryptionNoSchema(final String hashAlgorithm) throws IOException {
+        runner.setProperty(EncryptValueProperties.FIELD_NAMES, "first_name,last_name,card_number");
+        runner.setProperty(EncryptValueProperties.FLOW_FORMAT, "AVRO");
         runner.setProperty(EncryptValueProperties.HASH_ALG, hashAlgorithm);
         runner.setProperty(EncryptValueProperties.SALT, "ef3de698a8956f6eff8b7344407d861b7");
         runner.setValidateExpressionUsage(false);
