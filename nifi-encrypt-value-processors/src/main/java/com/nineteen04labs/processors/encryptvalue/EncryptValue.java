@@ -131,7 +131,8 @@ public class EncryptValue extends AbstractProcessor {
                         jsonParser = jsonFactory.createParser(line);
                         while (jsonParser.nextToken() != null) {
                             jsonGen.copyCurrentEvent(jsonParser);
-                            if(fieldNames.contains(jsonParser.getCurrentName())) {
+                            String key = jsonParser.getCurrentName();
+                            if(fieldNames.stream().anyMatch(field -> field.equalsIgnoreCase(key))) {
                                 jsonParser.nextToken();
                                 String valueToHash = jsonParser.getText();
                                 if ("null".equals(valueToHash))
