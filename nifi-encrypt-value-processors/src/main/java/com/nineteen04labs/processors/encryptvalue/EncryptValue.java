@@ -91,7 +91,7 @@ public class EncryptValue extends AbstractProcessor {
         }
         try {
             final String rawFieldNames = context.getProperty(EncryptValueProperties.FIELD_NAMES).evaluateAttributeExpressions(flowFile).getValue();
-            if (rawFieldNames == null) {
+            if ("".equals(rawFieldNames) || rawFieldNames == null) {
                 session.transfer(flowFile, EncryptValueRelationships.REL_BYPASS);
                 return;
             }

@@ -19,7 +19,7 @@
 
     <groupId>com.nineteen04labs</groupId>
     <artifactId>nifi-encrypt-value-bundle</artifactId>
-    <version>18.08.0</version>
+    <version>19.01.0</version>
     <packaging>pom</packaging>
 
     <modules>
